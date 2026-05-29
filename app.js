@@ -310,20 +310,9 @@ function getFilteredData() {
 // MOCK DATA & STATE
 // =============================================
 const INITIAL_MOCK_DATA = {
-    incomes: [
-        { id: 'mock_inc_1', date: '2026-05-20', amount: 1500, description: 'ยอดขาย (เช้า)' },
-        { id: 'mock_inc_2', date: '2026-05-22', amount: 2200, description: 'ยอดขาย (กลางวัน)' },
-        { id: 'mock_inc_3', date: '2026-05-25', amount: 800, description: 'ยอดขาย (บ่าย)' }
-    ],
-    expenses: [
-        { id: 'mock_exp_1', date: '2026-05-21', amount: 450, description: 'ซื้อสมุดและปากกา', category: 'เครื่องเขียน' },
-        { id: 'mock_exp_2', date: '2026-05-23', amount: 1200, description: 'จ่ายค่าไอศกรีมวอลล์', category: 'ไอศกรีม' },
-        { id: 'mock_exp_3', date: '2026-05-26', amount: 300, description: 'น้ำดื่ม', category: 'น้ำเปล่า' }
-    ],
-    logs: [
-        { id: 'mock_log_1', timestamp: '20/05/2569 09:30', adminName: 'ผู้ดูแลระบบ', action: 'เพิ่ม', detail: 'เพิ่มรายรับ ยอดขาย (เช้า) (฿1500)' },
-        { id: 'mock_log_2', timestamp: '21/05/2569 10:15', adminName: 'ผู้ดูแลระบบ', action: 'เพิ่ม', detail: 'เพิ่มรายจ่าย ซื้อสมุดและปากกา (฿450)' }
-    ],
+    incomes: [],
+    expenses: [],
+    logs: [],
     admins: [{ id: 'admin_1', name: 'ผู้ดูแลระบบ', pin: '111111' }]
 };
 
@@ -354,13 +343,6 @@ async function initData() {
             appData = remote;
             if (!appData.admins || appData.admins.length === 0) {
                 appData.admins = INITIAL_MOCK_DATA.admins;
-            }
-
-            // Show mock data if DB is completely empty so the UI looks complete
-            if (appData.incomes.length === 0 && appData.expenses.length === 0) {
-                appData.incomes = INITIAL_MOCK_DATA.incomes;
-                appData.expenses = INITIAL_MOCK_DATA.expenses;
-                appData.logs = INITIAL_MOCK_DATA.logs;
             }
 
             checkAuthState();
@@ -833,8 +815,8 @@ function switchTab(tabId) {
 // =============================================
 // MODAL & FLATPICKR
 // =============================================
-const KNOWN_INCOME_TYPES = ['ยอดขาย (เช้า)', 'ยอดขาย (กลางวัน)', 'ยอดขาย (บ่าย)', 'ยืมเงินงบพัฒฯ'];
-const KNOWN_EXPENSE_CATS = ['ไอศกรีม', 'เครื่องเขียน', 'น้ำเสริมสุข', 'น้ำเปล่า', 'แม็คโคร', 'คืนเงินงบพัฒฯ'];
+const KNOWN_INCOME_TYPES = ['ยอดขาย (เช้า)', 'ยอดขาย (กลางวัน)', 'ยอดขาย (บ่าย)'];
+const KNOWN_EXPENSE_CATS = ['ไอศกรีม', 'เครื่องเขียน', 'น้ำเสริมสุข', 'น้ำเปล่า', 'แม็คโคร'];
 
 let datePickerInstance = null;
 
