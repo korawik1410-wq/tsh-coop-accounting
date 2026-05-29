@@ -1,0 +1,59 @@
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Nav Button Active States */
+.nav-btn.active {
+    background-color: #eff6ff; /* blue-50 */
+    color: #2563eb; /* blue-600 */
+    font-weight: 600;
+}
+.nav-btn.active svg {
+    color: #2563eb;
+}
+
+/* Table Row Hover Effects */
+tbody tr {
+    transition: background-color 0.2s ease-in-out;
+}
+tbody tr:hover {
+    background-color: #f8fafc; /* slate-50 */
+}
+html.dark tbody tr:hover {
+    background-color: #27272a; /* zinc-800 */
+}
+
+/* Chart Canvas Responsive Container */
+canvas {
+    max-height: 100%;
+    max-width: 100%;
+}
+
+/* Modal Open state */
+#data-modal:not(.hidden) {
+    display: flex;
+}
+#data-modal:not(.hidden) #modal-content {
+    transform: scale(1);
+}

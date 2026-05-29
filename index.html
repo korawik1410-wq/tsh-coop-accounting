@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="th" class="">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบัญชีสหการโรงเรียน</title>
+    <meta name="description" content="ระบบบันทึกรายรับ-รายจ่าย สหกรณ์โรงเรียนทุ่งสองห้อง">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <!-- ExcelJS for styled Excel export -->
+    <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <!-- Flatpickr for B.E. Calendar -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://unpkg.com/flatpickr/dist/l10n/th.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Kanit', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css?v=2">
+</head>
+
+<body
+    class="bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans antialiased h-screen flex overflow-hidden transition-colors duration-300">
+
+    <!-- Mobile overlay -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-20 hidden lg:hidden" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <nav id="sidebar"
+        class="fixed lg:relative w-60 bg-zinc-900 dark:bg-zinc-950 border-r border-zinc-800 text-gray-400 z-30 flex flex-col h-full rounded-tr-3xl rounded-br-3xl shadow-2xl -translate-x-full lg:translate-x-0 transition-transform duration-300">
+        <div class="p-5 border-b border-zinc-800 flex items-center justify-between">
+            <h2 class="text-lg font-bold text-white flex items-center">
+                <span class="text-pink-400 mr-2 text-xl">●</span> บัญชีสหการ
+            </h2>
+            <button onclick="toggleSidebar()" class="lg:hidden text-gray-500 hover:text-white p-1 rounded-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="p-3 flex-1 mt-2">
+            <p class="text-xs font-semibold text-zinc-600 uppercase tracking-widest mb-3 ml-2">เมนูหลัก</p>
+            <ul class="space-y-1">
+                <li>
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard"
+                        class="nav-btn w-full flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 hover:text-white text-pink-400 font-medium text-sm">
+                        <svg class="w-4 h-4 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
+                        แดชบอร์ด
+                    </button>
+                </li>
+                <li>
+                    <button onclick="switchTab('calendar')" id="nav-calendar"
+                        class="nav-btn w-full flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 hover:text-white text-gray-400 font-medium text-sm">
+                        <svg class="w-4 h-4 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        ปฏิทิน
+                    </button>
+                </li>
+                <li>
+                    <button onclick="switchTab('history')" id="nav-history"
+                        class="nav-btn w-full flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 hover:text-white text-gray-400 font-medium text-sm">
+                        <svg class="w-4 h-4 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h7" />
+                        </svg>
+                        ข้อมูลรายรับ-รายจ่าย
+                    </button>
+                </li>
+
+            </ul>
+        </div>
+
+        <div class="p-3 mt-auto">
+            <ul class="space-y-1">
+                <li id="menu-action-log" class="hidden">
+                    <button onclick="switchTab('action-log')" id="nav-action-log"
+                        class="nav-btn w-full flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 hover:text-white text-gray-400 font-medium text-sm">
+                        <svg class="w-4 h-4 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        ประวัติการบันทึก
+                    </button>
+                </li>
+                <li>
+                    <button onclick="switchTab('settings')" id="nav-settings"
+                        class="nav-btn w-full flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 hover:text-white text-gray-400 font-medium text-sm">
+                        <svg class="w-4 h-4 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        ตั้งค่า
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="p-4 text-xs text-center text-zinc-700">&copy; 2568 สหการโรงเรียน</div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto relative">
+
+        <!-- Header -->
+        <header
+            class="bg-zinc-100 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-20 px-5 py-3.5 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <button onclick="toggleSidebar()"
+                    class="lg:hidden p-2 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <div>
+                    <h1 class="text-base font-bold text-zinc-900 dark:text-zinc-100 leading-tight">สวัสดี, คุณครู 👋
+                    </h1>
+                    <p class="text-xs text-zinc-400 dark:text-zinc-500 hidden sm:block">บัญชีสหการ โรงเรียนทุ่งสองห้อง
+                        (คุปตัษเฐียรอุทิศ)</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <!-- Dark Mode Toggle -->
+                <button onclick="toggleDarkMode()" id="dark-toggle" title="สลับธีม"
+                    class="px-3 py-1.5 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-yellow-400 transition-colors text-xs font-semibold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center">
+                    <div id="icon-dark" class="hidden flex items-center space-x-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                        <span>โหมดมืด</span>
+                    </div>
+                    <div id="icon-light" class="flex items-center space-x-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <span>โหมดสว่าง</span>
+                    </div>
+                </button>
+
+                <button onclick="openLoginModal()" id="login-btn"
+                    class="text-xs font-bold bg-zinc-800 dark:bg-zinc-700 hover:bg-zinc-900 dark:hover:bg-zinc-600 text-white px-3 py-1.5 rounded-xl transition-colors">เข้าสู่ระบบ</button>
+
+                <div id="user-profile"
+                    class="hidden items-center space-x-2 cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-800 p-1 rounded-full pr-3 transition-colors"
+                    onclick="logout()" title="ออกจากระบบ">
+                    <div class="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold text-xs"
+                        id="profile-initial">A</div>
+                    <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300 hidden sm:block"
+                        id="profile-name">Admin</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="p-4 md:p-5 max-w-7xl mx-auto">
+
+            <!-- ==================== DASHBOARD ==================== -->
+            <section id="view-dashboard" class="tab-content block animate-fade-in">
+
+                <!-- Selectors & Export -->
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-zinc-800 dark:text-zinc-100">ภาพรวมการเงิน</h2>
+                    <div class="flex items-center space-x-2">
+                        <select id="time-selector" onchange="handleTimeChange()"
+                            class="px-3 py-1.5 text-sm bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow shadow-sm">
+                        </select>
+                        <button onclick="exportToExcel()" class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 text-sm bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors shadow-sm" title="ส่งออกเป็น Excel">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>Excel</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    <!-- Balance (Yellow) -->
+                    <div class="bg-[#fde047] dark:bg-yellow-400 rounded-2xl p-5 relative overflow-hidden">
+                        <p class="text-gray-800 font-semibold text-xs mb-1.5 uppercase tracking-wide">คงเหลือ</p>
+                        <h3 class="text-2xl font-semibold text-gray-900 tracking-tight" id="kpi-net-balance">฿0.00</h3>
+                        <div class="mt-3"><span
+                                class="bg-yellow-200/60 text-yellow-900 px-2.5 py-0.5 rounded-full text-xs font-medium">เงินคงเหลือทั้งหมด</span>
+                        </div>
+                        <div class="absolute -right-6 -bottom-6 opacity-15 text-yellow-700"><svg class="w-24 h-24"
+                                fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+                                    clip-rule="evenodd" />
+                            </svg></div>
+                    </div>
+
+                    <!-- Income (Green) -->
+                    <div class="bg-[#bbf7d0] dark:bg-emerald-300 rounded-2xl p-5 flex flex-col justify-between">
+                        <div>
+                            <p class="text-gray-700 font-semibold text-xs mb-1.5 uppercase tracking-wide">รายรับรวม</p>
+                            <h3 class="text-2xl font-semibold text-gray-900" id="kpi-total-income">฿0.00</h3>
+                        </div>
+                        <div
+                            class="mt-3 w-8 h-8 bg-green-200/60 rounded-full flex items-center justify-center text-green-800">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Expense (Pink) -->
+                    <div class="bg-[#fbcfe8] dark:bg-pink-300 rounded-2xl p-5 flex flex-col justify-between">
+                        <div>
+                            <p class="text-gray-700 font-semibold text-xs mb-1.5 uppercase tracking-wide">รายจ่ายรวม</p>
+                            <h3 class="text-2xl font-semibold text-gray-900" id="kpi-total-expense">฿0.00</h3>
+                        </div>
+                        <div
+                            class="mt-3 w-8 h-8 bg-pink-200/60 rounded-full flex items-center justify-center text-pink-800">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Overview Chart -->
+                <div class="bg-white dark:bg-zinc-800 rounded-2xl p-5 shadow-sm mb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-sm font-bold text-zinc-800 dark:text-zinc-100">ภาพรวมรายรับ-รายจ่าย (รายเดือน)
+                        </h2>
+                    </div>
+                    <div class="w-full h-[220px]">
+                        <canvas id="overviewChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Doughnut Charts -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-white dark:bg-zinc-800 rounded-2xl p-5 shadow-sm">
+                        <h2 class="text-sm font-bold text-zinc-800 dark:text-zinc-100 mb-4">สัดส่วนรายรับ</h2>
+                        <div class="h-[180px]">
+                            <canvas id="incomeChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-zinc-800 rounded-2xl p-5 shadow-sm">
+                        <h2 class="text-sm font-bold text-zinc-800 dark:text-zinc-100 mb-4">สัดส่วนรายจ่าย</h2>
+                        <div class="h-[180px]">
+                            <canvas id="expenseChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== CALENDAR ==================== -->
+            <section id="view-calendar" class="tab-content hidden animate-fade-in">
+                <div class="flex justify-between items-center mb-4 px-1">
+                    <div>
+                        <h2 class="text-xl font-bold text-zinc-800 dark:text-zinc-100">ปฏิทิน</h2>
+                        <p class="text-xs text-zinc-400 mt-0.5">ภาพรวมรายเดือน</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="changeMonth(-1)"
+                            class="p-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <span id="calendar-month-year"
+                            class="font-semibold text-zinc-800 dark:text-zinc-100 w-28 text-center text-sm"></span>
+                        <button onclick="changeMonth(1)"
+                            class="p-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-zinc-800 rounded-2xl shadow-sm overflow-hidden p-4">
+                    <div
+                        class="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                        <div>อา.</div>
+                        <div>จ.</div>
+                        <div>อ.</div>
+                        <div>พ.</div>
+                        <div>พฤ.</div>
+                        <div>ศ.</div>
+                        <div>ส.</div>
+                    </div>
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-1.5 sm:gap-2">
+                        <!-- Days injected here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== HISTORY (ACCORDION) ==================== -->
+            <section id="view-history" class="tab-content hidden animate-fade-in">
+                <div class="flex justify-between items-center mb-4 px-1">
+                    <div>
+                        <div class="flex items-center space-x-3">
+                            <h2 class="text-xl font-bold text-zinc-800 dark:text-zinc-100">ข้อมูลรายรับ-รายจ่าย</h2>
+                            <div class="flex items-center space-x-1 mt-1 sm:mt-0">
+                                <button onclick="changeMonth(-1)"
+                                    class="p-1 rounded-md bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                </button>
+                                <span id="history-month-year"
+                                    class="font-semibold text-zinc-800 dark:text-zinc-100 w-24 text-center text-xs"></span>
+                                <button onclick="changeMonth(1)"
+                                    class="p-1 rounded-md bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text-xs text-zinc-400 mt-1">แบ่งตามสัปดาห์</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="exportHistoryToExcel()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-medium text-xs flex items-center transition-all shadow-sm hidden sm:flex" title="ส่งออกเป็น Excel">
+                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Excel
+                        </button>
+                        <button onclick="openModal('income')"
+                            class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-medium text-xs flex items-center transition-all shadow-sm">
+                            + รายรับ
+                        </button>
+                        <button onclick="openModal('expense')"
+                            class="bg-pink-500 hover:bg-pink-600 text-white px-3 py-1.5 rounded-lg font-medium text-xs flex items-center transition-all shadow-sm">
+                            + รายจ่าย
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-4 space-y-2 sm:space-y-3">
+                    <!-- Total Balance Card (Full Width) -->
+                    <div class="bg-[#0f172a] border border-[#1e293b] rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center shadow-lg transition-all relative overflow-hidden">
+                        <div class="absolute -right-4 -bottom-4 opacity-10 text-[#FCF6BD]">
+                            <svg class="w-32 h-32" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
+                        </div>
+                        <span class="text-xs sm:text-sm text-[#FCF6BD] opacity-90 font-bold mb-2 uppercase tracking-wider text-center relative z-10">
+                            💰 ยอดเงินสะสมคงคลังทั้งหมด
+                        </span>
+                        <span id="history-kpi-total-balance" class="text-3xl sm:text-4xl md:text-5xl font-black text-[#FCF6BD] relative z-10" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                            ฿0.00
+                        </span>
+                    </div>
+
+                    <!-- Monthly Sub-cards (Half Width) -->
+                    <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                        <div class="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm transition-all">
+                            <span class="text-[11px] sm:text-xs text-emerald-600 dark:text-emerald-400 font-bold mb-1 uppercase tracking-wider text-center">
+                                รายรับรวม (เดือนนี้)
+                            </span>
+                            <span id="history-kpi-income" class="text-base sm:text-xl font-black text-emerald-700 dark:text-emerald-300">
+                                ฿0.00
+                            </span>
+                        </div>
+                        <div class="bg-pink-50 dark:bg-pink-500/10 border border-pink-100 dark:border-pink-500/20 rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm transition-all">
+                            <span class="text-[11px] sm:text-xs text-pink-600 dark:text-pink-400 font-bold mb-1 uppercase tracking-wider text-center">
+                                รายจ่ายรวม (เดือนนี้)
+                            </span>
+                            <span id="history-kpi-expense" class="text-base sm:text-xl font-black text-pink-700 dark:text-pink-300">
+                                ฿0.00
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="accordion-container" class="space-y-3">
+                    <!-- Accordions injected here -->
+                </div>
+            </section>
+
+
+
+            <!-- ==================== ACTION LOG ==================== -->
+            <section id="view-action-log" class="tab-content hidden animate-fade-in">
+                <div class="flex justify-between items-center mb-4 px-1">
+                    <div>
+                        <h2 class="text-xl font-bold text-zinc-800 dark:text-zinc-100">ประวัติการบันทึก</h2>
+                        <p class="text-xs text-zinc-400 mt-0.5">บันทึกการเพิ่ม แก้ไข ลบข้อมูล</p>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-zinc-800 rounded-2xl p-5 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr
+                                    class="text-xs text-zinc-400 uppercase tracking-wider border-b border-zinc-100 dark:border-zinc-700/50">
+                                    <th class="px-3 py-3">วัน-เวลา</th>
+                                    <th class="px-3 py-3">แอดมิน</th>
+                                    <th class="px-3 py-3">การกระทำ</th>
+                                    <th class="px-3 py-3">รายการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="action-log-body" class="divide-y divide-zinc-50 dark:divide-zinc-700/50 text-sm">
+                                <!-- Action logs injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== SETTINGS ==================== -->
+            <section id="view-settings" class="tab-content hidden animate-fade-in">
+                <div class="flex justify-between items-center mb-4 px-1">
+                    <div>
+                        <h2 class="text-xl font-bold text-zinc-800 dark:text-zinc-100">ตั้งค่า</h2>
+                        <p class="text-xs text-zinc-400 mt-0.5">จัดการระบบและผู้ดูแล</p>
+                    </div>
+                </div>
+
+                <div class="space-y-5">
+                    <!-- Admin Management -->
+                    <div class="bg-white dark:bg-zinc-800 rounded-2xl p-5 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-sm font-bold text-zinc-800 dark:text-zinc-100">จัดการสิทธิ์แอดมิน (PIN 6
+                                หลัก)</h3>
+                            <button onclick="openAdminModal()"
+                                class="text-xs bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity">
+                                + เพิ่มแอดมิน
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr
+                                        class="text-xs text-zinc-400 uppercase tracking-wider border-b border-zinc-100 dark:border-zinc-700/50">
+                                        <th class="px-2 py-2">ชื่อแอดมิน</th>
+                                        <th class="px-2 py-2 text-center w-20">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-list-body"
+                                    class="divide-y divide-zinc-50 dark:divide-zinc-700/50 text-sm">
+                                    <!-- Admins injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- System Data Management -->
+                    <div class="bg-white dark:bg-zinc-800 rounded-2xl p-5 shadow-sm">
+                        <h3 class="text-sm font-bold text-zinc-800 dark:text-zinc-100 mb-2">จัดการข้อมูลระบบ</h3>
+                        <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
+                            การลบข้อมูลทั้งหมดจะไม่สามารถเรียกคืนได้ กรุณาตรวจสอบให้แน่ใจก่อนดำเนินการ</p>
+
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <button onclick="clearLogs()"
+                                class="text-sm font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-xl border border-amber-200 dark:border-amber-900/50 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors flex items-center justify-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>ล้างประวัติการบันทึก</span>
+                            </button>
+                            <button onclick="clearAllData()"
+                                class="text-sm font-semibold bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-2 rounded-xl border border-red-200 dark:border-red-900/50 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center justify-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                <span>เคลียร์ข้อมูลทั้งหมด</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- ==================== MODAL ==================== -->
+    <div id="data-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl w-full max-w-md transition-all" id="modal-content">
+            <div class="p-5 border-b border-zinc-100 dark:border-zinc-700 flex justify-between items-center">
+                <h3 class="text-base font-bold text-zinc-800 dark:text-zinc-100" id="modal-title">เพิ่มข้อมูล</h3>
+                <button onclick="closeModal()"
+                    class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-5">
+                <form id="data-form" onsubmit="handleFormSubmit(event)">
+                    <input type="hidden" id="form-id">
+                    <input type="hidden" id="form-type">
+
+                    <div class="space-y-3">
+                        <!-- Date -->
+                        <div>
+                            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">วันที่
+                                *</label>
+                            <input type="text" id="form-date" required
+                                class="w-full px-4 py-2.5 border border-zinc-200 dark:border-zinc-600 rounded-xl bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-sm">
+                        </div>
+
+                        <!-- Income: Type dropdown -->
+                        <div id="income-desc-container" class="hidden">
+                            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">ประเภทรายรับ
+                                *</label>
+                            <select id="form-income-type" onchange="handleIncomeTypeChange()"
+                                class="w-full px-4 py-2.5 border border-zinc-200 dark:border-zinc-600 rounded-xl bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm">
+                                <option value="ยอดขาย (เช้า)">ยอดขาย (เช้า)</option>
+                                <option value="ยอดขาย (กลางวัน)">ยอดขาย (กลางวัน)</option>
+                                <option value="ยอดขาย (บ่าย)">ยอดขาย (บ่าย)</option>
+
+                                <option value="other">อื่นๆ (กรอกเพิ่มเติม)</option>
+                            </select>
+                        </div>
+
+                        <!-- Income: Custom text (shown when "อื่นๆ") -->
+                        <div id="income-desc-custom" class="hidden">
+                            <label
+                                class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">ระบุรายการเพิ่มเติม
+                                *</label>
+                            <input type="text" id="form-income-desc-text" placeholder="กรอกรายการ..."
+                                class="w-full px-4 py-2.5 border border-zinc-200 dark:border-zinc-600 rounded-xl bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm">
+                        </div>
+
+                        <!-- Expense: Category dropdown -->
+                        <div id="expense-category-container" class="hidden">
+                            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">รายการ
+                                *</label>
+                            <select id="form-category" onchange="handleExpenseCategoryChange()"
+                                class="w-full px-4 py-2.5 border border-zinc-200 dark:border-zinc-600 rounded-xl bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm">
+                                <option value="ไอศกรีม">ไอศกรีม</option>
+                                <option value="เครื่องเขียน">เครื่องเขียน</option>
+                                <option value="น้ำเสริมสุข">น้ำเสริมสุข</option>
+                                <option value="น้ำเปล่า">น้ำเปล่า</option>
+                                <option value="แม็คโคร">แม็คโคร</option>
+                                <option value="อื่นๆ">อื่นๆ (กรอกเพิ่มเติม)</option>
+                            </select>
+                        </div>
+
+                        <!-- Expense: Custom category (shown when "อื่นๆ") -->
+                        <div id="expense-cat-custom" class="hidden">
+                            <label
+                                class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">ระบุรายการเพิ่มเติม
+                                *</label>
+                            <input type="text" id="form-category-custom" placeholder="ระบุรายการ..."
+                                class="w-full px-4 py-2.5 border border-zinc-200 dark:border-zinc-600 rounded-xl bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm">
+                        </div>
+
+                        <!-- Amount -->
+                        <div>
+                            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">จำนวนเงิน
+                                (บาท) *</label>
+                            <div class="relative">
+                                <span
+                                    class="absolute inset-y-0 left-0 pl-4 flex items-center text-zinc-400 text-sm pointer-events-none">฿</span>
+                                <input type="number" id="form-amount" step="0.01" min="0" required placeholder="0.00"
+                                    class="w-full pl-8 pr-4 py-2.5 border border-zinc-200 dark:border-zinc-600 rounded-xl bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 flex justify-end space-x-3">
+                        <button type="button" onclick="closeModal()"
+                            class="px-5 py-2.5 text-sm font-medium text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 rounded-xl transition-colors">ยกเลิก</button>
+                        <button type="submit" id="form-submit-btn"
+                            class="px-5 py-2.5 text-sm font-medium text-white bg-zinc-900 dark:bg-white dark:text-zinc-900 hover:opacity-90 rounded-xl shadow-sm transition-all">บันทึก</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== DAY DETAILS MODAL ==================== -->
+    <div id="day-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl w-full max-w-md transition-all">
+            <div
+                class="p-5 border-b border-zinc-100 dark:border-zinc-700 flex justify-between items-center bg-zinc-50 dark:bg-zinc-800/80 rounded-t-2xl">
+                <div>
+                    <h3 class="text-base font-bold text-zinc-800 dark:text-zinc-100" id="day-modal-title">สรุปยอดวันที่
+                    </h3>
+                    <p class="text-xs text-zinc-500 mt-0.5" id="day-modal-date"></p>
+                </div>
+                <button onclick="closeDayModal()"
+                    class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1.5 rounded-full hover:bg-white dark:hover:bg-zinc-700 transition-colors shadow-sm bg-white dark:bg-zinc-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-5 max-h-[60vh] overflow-y-auto">
+                <div class="space-y-4">
+                    <div>
+                        <h4
+                            class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide mb-2">
+                            รายรับ</h4>
+                        <div id="day-modal-income" class="space-y-2"></div>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-pink-600 dark:text-pink-400 uppercase tracking-wide mb-2">
+                            รายจ่าย</h4>
+                        <div id="day-modal-expense" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== LOGIN MODAL ==================== -->
+    <div id="login-modal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-[60] p-4">
+        <div
+            class="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-sm transition-all overflow-hidden border border-zinc-200 dark:border-zinc-800">
+            <div class="p-6 pb-2 text-center">
+                <div
+                    class="w-16 h-16 bg-pink-100 dark:bg-pink-900/30 text-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-zinc-800 dark:text-zinc-100 mb-1">กรอกรหัส PIN</h3>
+                <p class="text-xs text-zinc-500 dark:text-zinc-400">สำหรับผู้ดูแลระบบ (6 หลัก)</p>
+            </div>
+            <div class="p-6">
+                <form id="login-form" onsubmit="handleLoginSubmit(event)">
+                    <div class="mb-6 flex justify-center space-x-2" id="pin-inputs">
+                        <input type="password" maxlength="1"
+                            class="pin-box w-10 h-12 text-center text-xl font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 outline-none transition-all text-zinc-800 dark:text-zinc-100"
+                            required>
+                        <input type="password" maxlength="1"
+                            class="pin-box w-10 h-12 text-center text-xl font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 outline-none transition-all text-zinc-800 dark:text-zinc-100"
+                            required>
+                        <input type="password" maxlength="1"
+                            class="pin-box w-10 h-12 text-center text-xl font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 outline-none transition-all text-zinc-800 dark:text-zinc-100"
+                            required>
+                        <input type="password" maxlength="1"
+                            class="pin-box w-10 h-12 text-center text-xl font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 outline-none transition-all text-zinc-800 dark:text-zinc-100"
+                            required>
+                        <input type="password" maxlength="1"
+                            class="pin-box w-10 h-12 text-center text-xl font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 outline-none transition-all text-zinc-800 dark:text-zinc-100"
+                            required>
+                        <input type="password" maxlength="1"
+                            class="pin-box w-10 h-12 text-center text-xl font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 outline-none transition-all text-zinc-800 dark:text-zinc-100"
+                            required>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button type="button" onclick="closeLoginModal()"
+                            class="flex-1 py-3 text-sm font-medium text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl transition-colors">ยกเลิก</button>
+                        <button type="submit"
+                            class="flex-1 py-3 text-sm font-medium text-white bg-pink-500 hover:bg-pink-600 rounded-xl shadow-sm transition-all">เข้าสู่ระบบ</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== ADMIN SETTING MODAL ==================== -->
+    <div id="admin-modal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl w-full max-w-sm transition-all"
+            id="admin-modal-content">
+            <div class="p-5 border-b border-zinc-100 dark:border-zinc-700 flex justify-between items-center">
+                <h3 class="text-base font-bold text-zinc-800 dark:text-zinc-100">เพิ่มแอดมิน</h3>
+                <button onclick="closeAdminModal()"
+                    class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-5">
+                <form id="admin-form" onsubmit="handleAdminSubmit(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">ชื่อแอดมิน
+                                *</label>
+                            <input type="text" id="admin-name" required placeholder="เช่น ครูสมศรี"
+                                class="w-full px-4 py-2.5 border border-zinc-200 dark:border-zinc-600 rounded-xl bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-pink-500 outline-none transition-all text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">PIN 6 หลัก
+                                *</label>
+                            <input type="password" id="admin-pin" required pattern="\d{6}" maxlength="6"
+                                placeholder="******"
+                                class="w-full px-4 py-2.5 border border-zinc-200 dark:border-zinc-600 rounded-xl bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-pink-500 outline-none transition-all text-sm tracking-[0.5em] text-center">
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <button type="submit"
+                            class="w-full px-5 py-3 text-sm font-bold text-white bg-zinc-900 dark:bg-white dark:text-zinc-900 hover:opacity-90 rounded-xl shadow-sm transition-all">บันทึก</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script src="app.js?v=3"></script>
+</body>
+
+</html>

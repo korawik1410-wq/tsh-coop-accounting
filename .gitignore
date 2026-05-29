@@ -1,0 +1,14 @@
+# Local storage mock/cache or workspace settings
+.coopData
+coopData
+.DS_Store
+thumbs.db
+db.json
+
+# IDE Settings
+.vscode/
+.idea/
+
+# Node modules (if any)
+node_modules/
+package-lock.json
