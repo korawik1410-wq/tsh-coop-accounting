@@ -425,6 +425,7 @@ function checkAuthState() {
     const loginBtn = document.getElementById('login-btn');
     const userProfile = document.getElementById('user-profile');
     const actionLogMenu = document.getElementById('menu-action-log');
+    const settingsMenu = document.getElementById('menu-settings');
 
     if (currentUser) {
         if (loginBtn) loginBtn.classList.add('hidden');
@@ -435,6 +436,7 @@ function checkAuthState() {
             document.getElementById('profile-initial').innerText = currentUser.name.charAt(0);
         }
         if (actionLogMenu) actionLogMenu.classList.remove('hidden');
+        if (settingsMenu) settingsMenu.classList.remove('hidden');
     } else {
         if (loginBtn) loginBtn.classList.remove('hidden');
         if (userProfile) {
@@ -442,6 +444,7 @@ function checkAuthState() {
             userProfile.classList.remove('flex');
         }
         if (actionLogMenu) actionLogMenu.classList.add('hidden');
+        if (settingsMenu) settingsMenu.classList.add('hidden');
     }
 }
 
